@@ -11,9 +11,73 @@ inputAllCountries = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allCoun
 hw4Inputs = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs'
 pathSelfTrained = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\self_trained_model.vec'
 pathPreTrained = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\wiki.en.100k.vec'
+allUsersOfCountry = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allUsersOfCountryPhaseB'
 
 
 def main():
+
+    combineSentences(allUsersOfCountry)
+
+
+
+def readAndLabel(directory):
+
+    label = 0
+    totalCorpus = []
+    fileCorpus = []
+
+    # TODO: remove list limitations
+    for currentFile in os.listdir(directory)[:]:
+        if currentFile.endswith(".txt"):
+            path1 = directory + '\\' + currentFile
+            # print()
+            # print('Reading the file: ')
+            # print(path)
+
+            f = open(path1, 'r', encoding='utf-8')
+            sentences = f.read().splitlines()
+
+            for sentence in sentences:
+                totalCorpus.append({'text': sentence, 'class': label})
+
+        label += 1
+
+    return totalCorpus
+
+
+def combineSentences(folderPath):
+
+    largeSentence = ''
+
+    for currentFile in os.listdir(folderPath):
+        if currentFile.endswith(".txt"):
+            path1 = folderPath + '\\' + currentFile
+            # print()
+            # print('Reading the file: ')
+            # print(path)
+
+            f = open(path1, 'r', encoding='utf-8')
+            sentences = f.read().splitlines()
+
+            newPath = folderPath + '\\chunck\\' + 'combined20' + currentFile
+
+            f = open(newPath, 'w', encoding='utf-8')
+            counter = 0
+
+            for sentence in sentences:
+                counter += 1
+                largeSentence += sentence + ' '
+
+                if counter == 20:
+                    if sentence == sentences[len(sentences) - 1]:
+                        f.write(largeSentence)
+                    else:
+                        f.write(largeSentence + '\n')
+                        largeSentence = ''
+                        counter = 0
+
+
+def phaseA():
 
     model_pre_trained = KeyedVectors.load_word2vec_format(pathPreTrained, binary=False)
     model_self_trained = KeyedVectors.load_word2vec_format(pathSelfTrained, binary=False)
