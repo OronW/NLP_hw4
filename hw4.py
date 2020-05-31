@@ -25,26 +25,28 @@ chunkPath = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allUsersOfCount
 def main():
 
     # combineSentences(allUsersOfCountry)
-    # totalCorpus = readAndLabel(chunkPath)
-    # createFeatureVectors(totalCorpus, 'LR', vectorType='manual')
+    totalCorpus = readAndLabel(chunkPath)
     model = KeyedVectors.load_word2vec_format(pathPreTrained, binary=False)
-    if 'and' in model.vocab:
-        print('HURRAY!')
-
-    if 'etgf' in model.vocab:
-        print('haa!')
+    createFeatureVectors(totalCorpus, 'LR', model, vectorType='manual')
+    # if 'and' in model.vocab:
+    #     print('HURRAY!')
+    #
+    # if 'etgf' in model.vocab:
+    #     print('haa!')
     # print(model.word_vec('and')[:2])
     # print(model.get_vector('and')[:2])
 
 
 @ignore_warnings(category=ConvergenceWarning)
-def createFeatureVectors(totalCorpus, classifier, featureList=None, vectorType='normal'):
+def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vectorType='normal'):
 
     totalDf = pd.DataFrame.from_dict(totalCorpus)     # create a data frame for the labeled sentences
     y = totalDf['class']     # create a column for of the labels
     X = totalDf['text']
 
     sum = 0
+
+    weight = 1
 
     kf = KFold(n_splits=10, random_state=1, shuffle=True)
 
@@ -57,10 +59,23 @@ def createFeatureVectors(totalCorpus, classifier, featureList=None, vectorType='
         if vectorType == 'manual':
             myVectorXtrain = []
             myVectorXtest = []
+            sentenceVector = []
+            sumOfVec = np.zeros(shape=(300,))
 
-            for sentence in X_train:
-                st = sentence.split()
-                myVectorXtrain.append([len(sentence), len(st), sentence.count('!'), sentence.count('?'), sentence.count('.'), sentence.count('\''), sentence.count('I am'), sentence.count('you \' re'), sentence.count('. . .'), sentence.count('I \' m')])
+            for sentence in X_train[:1]:
+                print(sentence)
+                for word in sentence.split():
+                    print(word)
+                    if word in model.vocab:
+                        vecCalc = model.word_vec(word) * weight
+                        print(model.word_vec(word)[0])
+
+                        vecCalc /= len(sentence.split())
+                        print(len(sentence.split()))
+                        print('vecCalc: ', vecCalc[0])
+                        sumOfVec += vecCalc
+                        print(sumOfVec[0])
+                myVectorXtrain.append(sumOfVec)
 
             for sentence in X_test:
                 st = sentence.split()
