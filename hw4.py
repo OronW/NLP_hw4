@@ -11,6 +11,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
 from sklearn import metrics
+from sklearn.model_selection import StratifiedKFold
 
 
 path = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allCountryFiles'
@@ -44,79 +45,135 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
     y = totalDf['class']     # create a column for of the labels
     X = totalDf['text']
 
-    sum = 0
+    # print(X[0], ' ', y[0])
+    # print(X[40000], ' ', y[40000])
+
+    total_accuracy_score = 0
+    total_precision_score = 0
+    total_recall_score = 0
+    total_f1_score = 0
+
 
     weight = 1
 
-    kf = KFold(n_splits=10, random_state=1, shuffle=True)
+    skf = StratifiedKFold(n_splits=10, random_state=1, shuffle=True)
+    print(skf.get_n_splits(X, y))
 
-    for train_index, test_index in kf.split(X):
-        # print("\nTRAIN:", train_index, "TEST:", test_index)
+    for train_index, test_index in skf.split(X, y):
+        print("\nTRAIN:", train_index, "TEST:", test_index)
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
 
 
         if vectorType == 'manual':
+            print('in manual')
+
             myVectorXtrain = []
             myVectorXtest = []
             sentenceVector = []
-            sumOfVec = np.zeros(shape=(300,))
+            sumOfVec = np.zeros(shape=(300,), dtype='float32')
+            sumOfVecTest = np.zeros(shape=(300,), dtype='float32')
 
-            for sentence in X_train[:1]:
-                print(sentence)
+            TrainCounter = 0
+            TestCounter = 0
+
+            for sentence in X_train:
+                # print('Train Counter: ', TrainCounter)
+                # TrainCounter += 1
+                # print(sentence)
                 for word in sentence.split():
-                    print(word)
+                    # print(word)
                     if word in model.vocab:
                         vecCalc = model.word_vec(word) * weight
-                        print(model.word_vec(word)[0])
+                        # print(model.word_vec(word)[0])
 
-                        vecCalc /= len(sentence.split())
-                        print(len(sentence.split()))
-                        print('vecCalc: ', vecCalc[0])
+                        # print(len(sentence.split()))
+                        # print('vecCalc: ', vecCalc[0])
                         sumOfVec += vecCalc
-                        print(sumOfVec[0])
-                myVectorXtrain.append(sumOfVec)
+                sumOfVec /= len(sentence.split())
+                # print(sumOfVec[0])
+                myVectorXtrain.append(sumOfVec.tolist())
+                # print(np.array(sumOfVec.tolist()).shape)
+                # print(myVectorXtrain)
+
+                # print(np.array(myVectorXtrain).shape)
+
 
             for sentence in X_test:
-                st = sentence.split()
-                myVectorXtest.append([len(sentence), len(st), sentence.count('!'), sentence.count('?'), sentence.count('.'), sentence.count('\''), sentence.count('I am'), sentence.count('you \' re'), sentence.count('. . .'), sentence.count('I \' m')])
+                # print('Test Counter: ', TestCounter)
+                # TestCounter += 1
+                # print(sentence)
+                for word in sentence.split():
+                    # print(word)
+                    if word in model.vocab:
+                        vecCalc = model.word_vec(word) * weight
+                        # print(model.word_vec(word)[0])
 
+                        # print(len(sentence.split()))
+                        # print('vecCalc: ', vecCalc[0])
+                        sumOfVecTest += vecCalc
+                sumOfVecTest /= len(sentence.split())
+                # print(sumOfVecTest[0])
+                myVectorXtest.append(sumOfVecTest.tolist())
 
-            X_train_dtm = np.array(myVectorXtrain)  # create document - term matrix for the words
-            X_test_dtm = np.array(myVectorXtest)
+            gc.collect()
 
+            X_train_dtm = np.array(myVectorXtrain, dtype='float32')  # create document - term matrix for the words
+            X_test_dtm = np.array(myVectorXtest, dtype='float32')
+
+            X_train_dtm = X_train_dtm.astype('float32')
+            X_test_dtm = X_test_dtm.astype('float32')
+
+            print(X_train_dtm.shape)
+            print(X_test_dtm.shape)
 
 
         # -- this part for LR classifier --
-        elif classifier == 'LR':
+        if classifier == 'LR':
             lr = LogisticRegression(max_iter=500)
             lr.fit(X_train_dtm, y_train)
             y_pred_class = lr.predict(X_test_dtm)
-            sum += metrics.accuracy_score(y_test, y_pred_class)
+
+            total_accuracy_score += metrics.accuracy_score(y_test, y_pred_class)
+            total_precision_score += metrics.precision_score(y_test, y_pred_class, average='micro')
+            total_recall_score += metrics.recall_score(y_test, y_pred_class, average='micro')
+            total_f1_score += metrics.f1_score(y_test, y_pred_class, average='micro')
+
+            print('\naccuracy_score: ', metrics.accuracy_score(y_test, y_pred_class))
+            print('precision_score: ', metrics.precision_score(y_test, y_pred_class, average='micro'))
+            print('recall_score: ', metrics.recall_score(y_test, y_pred_class, average='micro'))
+            print('f1_score: ', metrics.f1_score(y_test, y_pred_class, average='micro'))
 
         else:
             print('NO CLASSIFIER SELECTED FOR \'createFeatureVectors\' FUNCTION. ENDING RUN! ')
             exit()
 
 
-        # print('\nAccuracy score: ', metrics.accuracy_score(y_test, y_pred_class))
-        # print('Test sentences by classes:')
-        # print(y_test.value_counts())
+        print('Test sentences by classes:')
+        print(y_test.value_counts())
+
+        # print('\naccuracy_score: ', metrics.accuracy_score(y_test, y_pred_class))
+        # print('\nprecision_score: ', metrics.precision_score(y_test, y_pred_class))
+        # print('\nrecall_score: ', metrics.recall_score(y_test, y_pred_class))
+        # print('\nf1_score: ', metrics.f1_score(y_test, y_pred_class))
         # print('Confusion matrix:\n', metrics.confusion_matrix(y_test, y_pred_class))
 
-    # print('\n**********************************')
+    print('\n**********************************')
 
-    acc = sum/10
-    total = int(sum*1000)/100
-
-    if classifier == 'NB':
-        print('Naïve Bayes:', total)
-        summary = str('Naïve Bayes: ' + str(total))
-        # summaryToFile.append(summary)
+    # acc = sum/10
+    # total = int(sum*1000)/100
+    total_accuracy_score = int(total_accuracy_score*1000)/100
+    total_precision_score = int(total_precision_score*1000)/100
+    total_recall_score = int(total_recall_score*1000)/100
+    total_f1_score = int(total_f1_score*1000)/100
 
     if classifier == 'LR':
-        print('Logistic Regression: ', total)
-        summary = str('Logistic Regression: ' + str(total))
+        print('Logistic Regression: ')
+        print('total_accuracy_score: ', total_accuracy_score)
+        print('total_precision_score: ', total_precision_score)
+        print('total_recall_score: ', total_recall_score)
+        print('total_f1_score: ', total_f1_score)
+        # summary = str('Logistic Regression: ' + str(total))
         # summaryToFile.append(summary)
 
 
