@@ -28,7 +28,11 @@ def main():
     # combineSentences(allUsersOfCountry)
     totalCorpus = readAndLabel(chunkPath)
     model = KeyedVectors.load_word2vec_format(pathPreTrained, binary=False)
-    createFeatureVectors(totalCorpus, 'LR', model, vectorType='manual')
+
+
+    createFeatureVectors(totalCorpus, 'LR', model, weightMod='random')
+    createFeatureVectors(totalCorpus, 'LR', model)
+
     # if 'and' in model.vocab:
     #     print('HURRAY!')
     #
@@ -39,7 +43,7 @@ def main():
 
 
 @ignore_warnings(category=ConvergenceWarning)
-def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vectorType='normal'):
+def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vectorType='normal', weightMod=None):
 
     totalDf = pd.DataFrame.from_dict(totalCorpus)     # create a data frame for the labeled sentences
     y = totalDf['class']     # create a column for of the labels
@@ -53,20 +57,39 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
     myVectorXtrain = []
     sumOfVec = np.zeros(shape=(300,))
 
+    # print('Test random:')
+    # ran = np.random.rand()
+    # print('Random num: ', ran)
+    # print(model.word_vec('and'))
+    # result = model.word_vec('and') * ran
+    # print('Result sum:')
+    # print(result)
+
     total_accuracy_score = 0
     total_precision_score = 0
     total_recall_score = 0
     total_f1_score = 0
 
-    weight = 1
+    if weightMod == 'random':
+        print('Random weight')
+        for sentence in X:
+            for word in sentence.split():
+                if word in model.vocab:
+                    vecCalc = model.word_vec(word) * np.random.rand()
+                    sumOfVec += vecCalc
+            sumOfVec /= len(sentence.split())
+            myVectorXtrain.append(sumOfVec.tolist())
 
-    for sentence in X:
-        for word in sentence.split():
-            if word in model.vocab:
-                vecCalc = model.word_vec(word) * weight
-                sumOfVec += vecCalc
-        sumOfVec /= len(sentence.split())
-        myVectorXtrain.append(sumOfVec.tolist())
+    else:
+        weight = 1
+
+        for sentence in X:
+            for word in sentence.split():
+                if word in model.vocab:
+                    vecCalc = model.word_vec(word) * weight
+                    sumOfVec += vecCalc
+            sumOfVec /= len(sentence.split())
+            myVectorXtrain.append(sumOfVec.tolist())
 
     # gc.collect()
 
@@ -74,12 +97,12 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
     print(myVectorXtrain.shape)
 
     lr = LogisticRegression(max_iter=100)
-    cv_results = cross_validate(lr, myVectorXtrain, y, cv=10, scoring=['accuracy', 'precision_micro', 'recall_micro', 'f1_micro'])
+    cv_results = cross_validate(lr, myVectorXtrain, y, cv=10, scoring=['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted'])
     print(cv_results.keys())
     print(cv_results['test_accuracy'])
-    print(cv_results['test_precision_micro'])
-    print(cv_results['test_recall_micro'])
-    print(cv_results['test_f1_micro'])
+    print(cv_results['test_precision_weighted'])
+    print(cv_results['test_recall_weighted'])
+    print(cv_results['test_f1_weighted'])
 
 
 # -----------------------------------------
