@@ -45,6 +45,9 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
     y = totalDf['class']     # create a column for of the labels
     X = totalDf['text']
 
+    print(y.shape)
+    print(X.shape)
+
     # print(X[0], ' ', y[0])
     # print(X[40000], ' ', y[40000])
     myVectorXtrain = []
@@ -65,14 +68,19 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
         sumOfVec /= len(sentence.split())
         myVectorXtrain.append(sumOfVec.tolist())
 
-    gc.collect()
+    # gc.collect()
 
-    myVectorXtrain = np.array(myVectorXtrain, dtype='np.float32')
+    myVectorXtrain = np.array(myVectorXtrain)
     print(myVectorXtrain.shape)
 
-    lr = LogisticRegression(max_iter=500)
-    cv_results = cross_validate(lr, myVectorXtrain, y, cv=1, scoring=['accuracy', 'precision_micro', 'recall_micro', 'f1_micro'])
+    lr = LogisticRegression(max_iter=100)
+    cv_results = cross_validate(lr, myVectorXtrain, y, cv=10, scoring=['accuracy', 'precision_micro', 'recall_micro', 'f1_micro'])
     print(cv_results.keys())
+    print(cv_results['test_accuracy'])
+    print(cv_results['test_precision_micro'])
+    print(cv_results['test_recall_micro'])
+    print(cv_results['test_f1_micro'])
+
 
 # -----------------------------------------
 #     skf = StratifiedKFold(n_splits=10, random_state=1, shuffle=True)
