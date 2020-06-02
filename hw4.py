@@ -1,5 +1,5 @@
 import os
-
+import random
 import gensim
 from gensim.models import Word2Vec
 import gc
@@ -12,6 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold, cross_validate
 from sklearn import metrics
 from sklearn.model_selection import StratifiedKFold
+import datetime
 
 
 path = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allCountryFiles'
@@ -25,13 +26,30 @@ chunkPath = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allUsersOfCount
 
 def main():
 
+    print(datetime.datetime.now())
+
     # combineSentences(allUsersOfCountry)
     totalCorpus = readAndLabel(chunkPath)
-    model = KeyedVectors.load_word2vec_format(pathPreTrained, binary=False)
+    print(totalCorpus[:2])
+    shuffledTotalCorpus = totalCorpus.copy()
+    random.shuffle(shuffledTotalCorpus)
+    print(shuffledTotalCorpus[:2])
+
+    modelPreTrained = KeyedVectors.load_word2vec_format(pathPreTrained, binary=False)
+    modelSelfTrained = KeyedVectors.load_word2vec_format(pathSelfTrained, binary=False)
 
 
-    createFeatureVectors(totalCorpus, 'LR', model, weightMod='random')
-    createFeatureVectors(totalCorpus, 'LR', model)
+
+    createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained, weightMod='random')
+    createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained)
+
+    print('------------------------')
+
+    createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained, weightMod='random')
+    createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained)
+
+    print()
+    print(datetime.datetime.now())
 
     # if 'and' in model.vocab:
     #     print('HURRAY!')
@@ -104,6 +122,30 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
     print(cv_results['test_recall_weighted'])
     print(cv_results['test_f1_weighted'])
 
+    for result in cv_results['test_accuracy']:
+        total_accuracy_score += result
+    for result in cv_results['test_precision_weighted']:
+        total_precision_score += result
+    for result in cv_results['test_recall_weighted']:
+        total_recall_score += result
+    for result in cv_results['test_f1_weighted']:
+        total_f1_score += result
+
+    total_accuracy_score /= 10
+    total_precision_score /= 10
+    total_recall_score /= 10
+    total_f1_score /= 10
+
+    total_accuracy_score = int(total_accuracy_score*10000)/100
+    total_precision_score = int(total_precision_score*10000)/100
+    total_recall_score = int(total_recall_score*10000)/100
+    total_f1_score = int(total_f1_score*10000)/100
+
+    print('final test_accuracy: ', total_accuracy_score)
+    print('final test_precision_weighted: ', total_precision_score)
+    print('final test_recall_weighted: ', total_recall_score)
+    print('final test_f1_weighted: ', total_f1_score)
+    print('**********************************************')
 
 # -----------------------------------------
 #     skf = StratifiedKFold(n_splits=10, random_state=1, shuffle=True)
