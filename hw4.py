@@ -40,6 +40,12 @@ def main():
     modelSelfTrained = KeyedVectors.load_word2vec_format(pathSelfTrained, binary=False)
 
 
+    wordListArray = modelPreTrained.index2entity
+
+    print(wordListArray[4])
+    print(wordListArray.index('to'))
+    print(len(wordListArray))
+
 
     # createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained, weightMod='random')
     # createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained)
@@ -110,17 +116,17 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
     elif weightMod == 'special':
         print('Special weight')
         for sentence in X:
-            counter = 0
             length = len(sentence.split())
+            counter = length
             forwardFlag = False
 
             for word in sentence.split():
-                if forwardFlag is False and counter < length:
-                    counter += 2
-                    if counter > length:
+                if forwardFlag is False and counter > 0:
+                    counter -= 2
+                    if counter <= 0:
                         forwardFlag = True
                 else:
-                    counter -= 2
+                    counter += 2
 
                 weight = counter/length
                 if weight > 1:
