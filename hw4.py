@@ -20,15 +20,16 @@ inputAllCountries = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allCoun
 hw4Inputs = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs'
 pathSelfTrained = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\self_trained_model.vec'
 pathPreTrained = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\wiki.en.100k.vec'
-allUsersOfCountry = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allUsersOfCountryPhaseB'
-chunkPath = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allUsersOfCountryPhaseB\chunk'
+topUsersOfCountry = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\topUsersOfCountryPhaseB'
+chunkPath = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\topUsersOfCountryPhaseB\chunk'
 
 
 def main():
 
     print(datetime.datetime.now())
 
-    # combineSentences(allUsersOfCountry)
+    # combineSentences(topUsersOfCountry)
+    # print('Done combining sentences')
     totalCorpus = readAndLabel(chunkPath)
     print(totalCorpus[:2])
     shuffledTotalCorpus = totalCorpus.copy()
@@ -40,13 +41,20 @@ def main():
 
 
 
-    createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained, weightMod='random')
-    createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained)
+    # createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained, weightMod='random')
+    # createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained)
+
+    createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained, weightMod='special')
+
+
 
     print('------------------------')
 
-    createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained, weightMod='random')
-    createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained)
+    # createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained, weightMod='random')
+    # createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained)
+
+    createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained, weightMod='special')
+
 
     print()
     print(datetime.datetime.now())
@@ -96,6 +104,34 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
                     vecCalc = model.word_vec(word) * np.random.rand()
                     sumOfVec += vecCalc
             sumOfVec /= len(sentence.split())
+            myVectorXtrain.append(sumOfVec.tolist())
+
+
+    elif weightMod == 'special':
+        print('Special weight')
+        for sentence in X:
+            counter = 0
+            length = len(sentence.split())
+            forwardFlag = False
+
+            for word in sentence.split():
+                if forwardFlag is False and counter < length:
+                    counter += 2
+                    if counter > length:
+                        forwardFlag = True
+                else:
+                    counter -= 2
+
+                weight = counter/length
+                if weight > 1:
+                    weight = 1
+                elif weight < 0:
+                    weight = 0
+
+                if word in model.vocab:
+                    vecCalc = model.word_vec(word) * weight
+                    sumOfVec += vecCalc
+            sumOfVec /= length
             myVectorXtrain.append(sumOfVec.tolist())
 
     else:
