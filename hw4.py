@@ -40,11 +40,11 @@ def main():
     modelSelfTrained = KeyedVectors.load_word2vec_format(pathSelfTrained, binary=False)
 
 
-    wordListArray = modelPreTrained.index2entity
-
-    print(wordListArray[4])
-    print(wordListArray.index('to'))
-    print(len(wordListArray))
+    # wordListArray = modelPreTrained.index2entity
+    #
+    # print(wordListArray[4])
+    # print(wordListArray.index('to'))
+    # print(len(wordListArray))
 
 
     # createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained, weightMod='random')
@@ -114,30 +114,21 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
 
 
     elif weightMod == 'special':
+
+        wordListArray = model.index2entity
+        print(wordListArray[4])
+        print(wordListArray.index('to'))
+
+        vocabLength = len(wordListArray)
+
         print('Special weight')
         for sentence in X:
-            length = len(sentence.split())
-            counter = length
-            forwardFlag = False
-
+            sentenceLength = len(sentence.split())
             for word in sentence.split():
-                if forwardFlag is False and counter > 0:
-                    counter -= 2
-                    if counter <= 0:
-                        forwardFlag = True
-                else:
-                    counter += 2
-
-                weight = counter/length
-                if weight > 1:
-                    weight = 1
-                elif weight < 0:
-                    weight = 0
-
                 if word in model.vocab:
-                    vecCalc = model.word_vec(word) * weight
+                    vecCalc = model.word_vec(word) * (wordListArray.index(word)/vocabLength)
                     sumOfVec += vecCalc
-            sumOfVec /= length
+            sumOfVec /= sentenceLength
             myVectorXtrain.append(sumOfVec.tolist())
 
     else:
