@@ -1,5 +1,7 @@
 import os
 import random
+import sys
+
 import gensim
 from gensim.models import Word2Vec
 import gc
@@ -15,63 +17,84 @@ from sklearn.model_selection import StratifiedKFold
 import datetime
 
 
-path = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allCountryFiles'
-inputAllCountries = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allCountryFiles\SumOfAll.txt'
-hw4Inputs = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs'
-pathSelfTrained = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\self_trained_model.vec'
-pathPreTrained = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\wiki.en.100k.vec'
-topUsersOfCountry = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\topUsersOfCountryPhaseB'
-chunkPath = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\topUsersOfCountryPhaseB\chunk'
+# path = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allCountryFiles'
+# inputAllCountries = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allCountryFiles\SumOfAll.txt'
+# hw4Inputs = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs'
+# pathSelfTrained = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\self_trained_model.vec'
+# pathPreTrained = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\wiki.en.100k.vec'
+# topUsersOfCountry = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\topUsersOfCountryPhaseB'
+# chunkPath = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\topUsersOfCountryPhaseB\chunk'
+
+summaryToFile = []
 
 
-def main():
+def main(chunkPath=sys.argv[1], pathPreTrained=sys.argv[2], pathSelfTrained=sys.argv[3], summaryOutputPath=sys.argv[4]):
 
     print(datetime.datetime.now())
 
     # combineSentences(topUsersOfCountry)
-    # print('Done combining sentences')
+
     totalCorpus = readAndLabel(chunkPath)
-    print(totalCorpus[:2])
     shuffledTotalCorpus = totalCorpus.copy()
     random.shuffle(shuffledTotalCorpus)
-    print(shuffledTotalCorpus[:2])
+
 
     modelPreTrained = KeyedVectors.load_word2vec_format(pathPreTrained, binary=False)
+
     modelSelfTrained = KeyedVectors.load_word2vec_format(pathSelfTrained, binary=False)
 
+    print('Arithmetic weights:')
+    summaryToFile.append('Arithmetic weights:')
 
-    # wordListArray = modelPreTrained.index2entity
-    #
-    # print(wordListArray[4])
-    # print(wordListArray.index('to'))
-    # print(len(wordListArray))
+    print('Pre-trained word2vec model performance:')
+    summaryToFile.append('Pre-trained word2vec model performance:')
+    createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained)
 
+    print('My word2vec model performance:')
+    summaryToFile.append('My word2vec model performance:')
+    createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained)
 
-    # createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained, weightMod='random')
-    # createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained)
+    print('-------------------------------------------------------------------------------------------------------------------')
+    summaryToFile.append('-------------------------------------------------------------------------------------------------------------------')
 
+    print('Random weights:')
+    summaryToFile.append('Random weights:')
+
+    print('Pre-trained word2vec model performance:')
+    summaryToFile.append('Pre-trained word2vec model performance:')
+    createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained, weightMod='random')
+
+    print('My word2vec model performance:')
+    summaryToFile.append('My word2vec model performance:')
+    createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained, weightMod='random')
+
+    print('-------------------------------------------------------------------------------------------------------------------')
+    summaryToFile.append('-------------------------------------------------------------------------------------------------------------------')
+
+    print('My weights:')
+    summaryToFile.append('My weights:')
+
+    print('Pre-trained word2vec model performance:')
+    summaryToFile.append('Pre-trained word2vec model performance:')
     createFeatureVectors(shuffledTotalCorpus, 'LR', modelPreTrained, weightMod='special')
 
-
-
-    print('------------------------')
-
-    # createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained, weightMod='random')
-    # createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained)
-
+    print('My word2vec model performance:')
+    summaryToFile.append('My word2vec model performance:')
     createFeatureVectors(shuffledTotalCorpus, 'LR', modelSelfTrained, weightMod='special')
 
+    createSummaryFile(summaryOutputPath)
 
     print()
     print(datetime.datetime.now())
 
-    # if 'and' in model.vocab:
-    #     print('HURRAY!')
-    #
-    # if 'etgf' in model.vocab:
-    #     print('haa!')
-    # print(model.word_vec('and')[:2])
-    # print(model.get_vector('and')[:2])
+
+def createSummaryFile(path):
+
+    f = open(path, 'w+', encoding='utf-8')
+
+    for line in summaryToFile:
+        f.write(line + '\n')
+
 
 
 @ignore_warnings(category=ConvergenceWarning)
@@ -149,11 +172,11 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
 
     lr = LogisticRegression(max_iter=100)
     cv_results = cross_validate(lr, myVectorXtrain, y, cv=10, scoring=['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted'])
-    print(cv_results.keys())
-    print(cv_results['test_accuracy'])
-    print(cv_results['test_precision_weighted'])
-    print(cv_results['test_recall_weighted'])
-    print(cv_results['test_f1_weighted'])
+    # print(cv_results.keys())
+    # print(cv_results['test_accuracy'])
+    # print(cv_results['test_precision_weighted'])
+    # print(cv_results['test_recall_weighted'])
+    # print(cv_results['test_f1_weighted'])
 
     for result in cv_results['test_accuracy']:
         total_accuracy_score += result
@@ -174,132 +197,22 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
     total_recall_score = int(total_recall_score*10000)/100
     total_f1_score = int(total_f1_score*10000)/100
 
-    print('final test_accuracy: ', total_accuracy_score)
-    print('final test_precision_weighted: ', total_precision_score)
-    print('final test_recall_weighted: ', total_recall_score)
-    print('final test_f1_weighted: ', total_f1_score)
-    print('**********************************************')
+    print('Accuracy: ', total_accuracy_score)
+    summary = str('Accuracy: ' + str(total_accuracy_score))
+    summaryToFile.append(summary)
 
-# -----------------------------------------
-#     skf = StratifiedKFold(n_splits=10, random_state=1, shuffle=True)
-#     print(skf.get_n_splits(X, y))
-#
-#     for train_index, test_index in skf.split(X, y):
-#         print("\nTRAIN:", train_index, "TEST:", test_index)
-#         X_train, X_test = X[train_index], X[test_index]
-#         y_train, y_test = y[train_index], y[test_index]
-#
-#
-#         if vectorType == 'manual':
-#             print('in manual')
-#
-#             myVectorXtrain = []
-#             myVectorXtest = []
-#             sentenceVector = []
-#             sumOfVec = np.zeros(shape=(300,), dtype='float32')
-#             sumOfVecTest = np.zeros(shape=(300,), dtype='float32')
-#
-#             TrainCounter = 0
-#             TestCounter = 0
-#
-#             for sentence in X_train:
-#                 # print('Train Counter: ', TrainCounter)
-#                 # TrainCounter += 1
-#                 # print(sentence)
-#                 for word in sentence.split():
-#                     # print(word)
-#                     if word in model.vocab:
-#                         vecCalc = model.word_vec(word) * weight
-#                         # print(model.word_vec(word)[0])
-#
-#                         # print(len(sentence.split()))
-#                         # print('vecCalc: ', vecCalc[0])
-#                         sumOfVec += vecCalc
-#                 sumOfVec /= len(sentence.split())
-#                 # print(sumOfVec[0])
-#                 myVectorXtrain.append(sumOfVec.tolist())
-#                 # print(np.array(sumOfVec.tolist()).shape)
-#                 # print(myVectorXtrain)
-#
-#                 # print(np.array(myVectorXtrain).shape)
-#
-#
-#             for sentence in X_test:
-#                 # print('Test Counter: ', TestCounter)
-#                 # TestCounter += 1
-#                 # print(sentence)
-#                 for word in sentence.split():
-#                     # print(word)
-#                     if word in model.vocab:
-#                         vecCalc = model.word_vec(word) * weight
-#                         # print(model.word_vec(word)[0])
-#
-#                         # print(len(sentence.split()))
-#                         # print('vecCalc: ', vecCalc[0])
-#                         sumOfVecTest += vecCalc
-#                 sumOfVecTest /= len(sentence.split())
-#                 # print(sumOfVecTest[0])
-#                 myVectorXtest.append(sumOfVecTest.tolist())
-#
-#             gc.collect()
-#
-#             X_train_dtm = np.array(myVectorXtrain, dtype='float32')  # create document - term matrix for the words
-#             X_test_dtm = np.array(myVectorXtest, dtype='float32')
-#
-#             X_train_dtm = X_train_dtm.astype('float32')
-#             X_test_dtm = X_test_dtm.astype('float32')
-#
-#             print(X_train_dtm.shape)
-#             print(X_test_dtm.shape)
-#
-#
-#         # -- this part for LR classifier --
-#         if classifier == 'LR':
-#             lr = LogisticRegression(max_iter=500)
-#             lr.fit(X_train_dtm, y_train)
-#             y_pred_class = lr.predict(X_test_dtm)
-#
-#             total_accuracy_score += metrics.accuracy_score(y_test, y_pred_class)
-#             total_precision_score += metrics.precision_score(y_test, y_pred_class, average='micro')
-#             total_recall_score += metrics.recall_score(y_test, y_pred_class, average='micro')
-#             total_f1_score += metrics.f1_score(y_test, y_pred_class, average='micro')
-#
-#             print('\naccuracy_score: ', metrics.accuracy_score(y_test, y_pred_class))
-#             print('precision_score: ', metrics.precision_score(y_test, y_pred_class, average='micro'))
-#             print('recall_score: ', metrics.recall_score(y_test, y_pred_class, average='micro'))
-#             print('f1_score: ', metrics.f1_score(y_test, y_pred_class, average='micro'))
-#
-#         else:
-#             print('NO CLASSIFIER SELECTED FOR \'createFeatureVectors\' FUNCTION. ENDING RUN! ')
-#             exit()
-#
-#
-#         print('Test sentences by classes:')
-#         print(y_test.value_counts())
-#
-#         # print('\naccuracy_score: ', metrics.accuracy_score(y_test, y_pred_class))
-#         # print('\nprecision_score: ', metrics.precision_score(y_test, y_pred_class))
-#         # print('\nrecall_score: ', metrics.recall_score(y_test, y_pred_class))
-#         # print('\nf1_score: ', metrics.f1_score(y_test, y_pred_class))
-#         # print('Confusion matrix:\n', metrics.confusion_matrix(y_test, y_pred_class))
-#
-#     print('\n**********************************')
-#
-#     # acc = sum/10
-#     # total = int(sum*1000)/100
-#     total_accuracy_score = int(total_accuracy_score*1000)/100
-#     total_precision_score = int(total_precision_score*1000)/100
-#     total_recall_score = int(total_recall_score*1000)/100
-#     total_f1_score = int(total_f1_score*1000)/100
-#
-#     if classifier == 'LR':
-#         print('Logistic Regression: ')
-#         print('total_accuracy_score: ', total_accuracy_score)
-#         print('total_precision_score: ', total_precision_score)
-#         print('total_recall_score: ', total_recall_score)
-#         print('total_f1_score: ', total_f1_score)
-#         # summary = str('Logistic Regression: ' + str(total))
-#         # summaryToFile.append(summary)
+    print('Precision: ', total_precision_score)
+    summary = str('Precision: ' + str(total_precision_score))
+    summaryToFile.append(summary)
+
+    print('Recall: ', total_recall_score)
+    summary = str('Recall: ' + str(total_recall_score))
+    summaryToFile.append(summary)
+
+    print('F1: ', total_f1_score)
+    summary = str('F1: ' + str(total_f1_score))
+    summaryToFile.append(summary)
+
 
 
 
@@ -361,7 +274,7 @@ def combineSentences(folderPath):
                         counter = 0
 
 
-def phaseA():
+def phaseA(pathPreTrained, pathSelfTrained):
 
     model_pre_trained = KeyedVectors.load_word2vec_format(pathPreTrained, binary=False)
     model_self_trained = KeyedVectors.load_word2vec_format(pathSelfTrained, binary=False)
@@ -393,15 +306,15 @@ def phaseA():
     print('calc movie + color - actor', model_self_trained.most_similar(positive=['nature', 'animal'], negative='water'))
 
 
-def oldMain():
-    sentencesList = sentencesToListOfLists(inputAllCountries)
-    if len(sentencesList) == 2214194:
-        print('Sentences list created successfully')
-
-    gc.collect
-    self_trained_model = Word2Vec(sentencesList, size=300, min_count=10)
-    self_trained_model.wv.save_word2vec_format(hw4Inputs + '\\' + 'self_trained_model')
-    print('Finished')
+# def oldMain():
+#     sentencesList = sentencesToListOfLists(inputAllCountries)
+#     if len(sentencesList) == 2214194:
+#         print('Sentences list created successfully')
+#
+#     gc.collect
+#     self_trained_model = Word2Vec(sentencesList, size=300, min_count=10)
+#     self_trained_model.wv.save_word2vec_format(hw4Inputs + '\\' + 'self_trained_model')
+#     print('Finished')
 
 
 def sentencesToListOfLists(inputPath):
