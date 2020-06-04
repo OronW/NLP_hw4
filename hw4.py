@@ -1,7 +1,6 @@
 import os
 import random
 import sys
-
 import gensim
 from gensim.models import Word2Vec
 import gc
@@ -16,14 +15,6 @@ from sklearn import metrics
 from sklearn.model_selection import StratifiedKFold
 import datetime
 
-
-# path = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allCountryFiles'
-# inputAllCountries = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\allCountryFiles\SumOfAll.txt'
-# hw4Inputs = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs'
-# pathSelfTrained = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\self_trained_model.vec'
-# pathPreTrained = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\wiki.en.100k.vec'
-# topUsersOfCountry = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\topUsersOfCountryPhaseB'
-# chunkPath = r'C:\Users\oron.werner\PycharmProjects\NLP\hw4Inputs\topUsersOfCountryPhaseB\chunk'
 
 summaryToFile = []
 
@@ -104,21 +95,12 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
     y = totalDf['class']     # create a column for of the labels
     X = totalDf['text']
 
-    print(y.shape)
-    print(X.shape)
+    # print(y.shape)
+    # print(X.shape)
 
-    # print(X[0], ' ', y[0])
-    # print(X[40000], ' ', y[40000])
     myVectorXtrain = []
     sumOfVec = np.zeros(shape=(300,))
 
-    # print('Test random:')
-    # ran = np.random.rand()
-    # print('Random num: ', ran)
-    # print(model.word_vec('and'))
-    # result = model.word_vec('and') * ran
-    # print('Result sum:')
-    # print(result)
 
     total_accuracy_score = 0
     total_precision_score = 0
@@ -126,7 +108,7 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
     total_f1_score = 0
 
     if weightMod == 'random':
-        print('Random weight')
+        # print('Random weight')
         for sentence in X:
             for word in sentence.split():
                 if word in model.vocab:
@@ -174,18 +156,12 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
             sumOfVec /= len(sentence.split())
             myVectorXtrain.append(sumOfVec.tolist())
 
-    # gc.collect()
 
     myVectorXtrain = np.array(myVectorXtrain)
-    print(myVectorXtrain.shape)
+    # print(myVectorXtrain.shape)
 
     lr = LogisticRegression(max_iter=100)
     cv_results = cross_validate(lr, myVectorXtrain, y, cv=10, scoring=['accuracy', 'precision_weighted', 'recall_weighted', 'f1_weighted'])
-    # print(cv_results.keys())
-    # print(cv_results['test_accuracy'])
-    # print(cv_results['test_precision_weighted'])
-    # print(cv_results['test_recall_weighted'])
-    # print(cv_results['test_f1_weighted'])
 
     for result in cv_results['test_accuracy']:
         total_accuracy_score += result
@@ -224,16 +200,14 @@ def createFeatureVectors(totalCorpus, classifier, model, featureList=None, vecto
 
 
 
-
-# TODO: make part of combinedSentences?
 def readAndLabel(directory):
 
     label = 0
     totalCorpus = []
     fileCorpus = []
 
-    # TODO: remove list limitations
-    for currentFile in os.listdir(directory)[:]:
+
+    for currentFile in os.listdir(directory):
         if currentFile.endswith(".txt"):
             path1 = directory + '\\' + currentFile
             # print()
@@ -313,17 +287,6 @@ def phaseA(pathPreTrained, pathSelfTrained):
 
     print('calc nature + animal - water', model_self_trained.most_similar(positive=['movie', 'color'], negative='actor'))
     print('calc movie + color - actor', model_self_trained.most_similar(positive=['nature', 'animal'], negative='water'))
-
-
-# def oldMain():
-#     sentencesList = sentencesToListOfLists(inputAllCountries)
-#     if len(sentencesList) == 2214194:
-#         print('Sentences list created successfully')
-#
-#     gc.collect
-#     self_trained_model = Word2Vec(sentencesList, size=300, min_count=10)
-#     self_trained_model.wv.save_word2vec_format(hw4Inputs + '\\' + 'self_trained_model')
-#     print('Finished')
 
 
 def sentencesToListOfLists(inputPath):
